@@ -14,6 +14,8 @@ module Rack
         :prefix   => 'gridfs',
         :lookup   => :id
       }.merge(options)
+      
+      # @default_avatar_file = nil
 
       @app        = app
       @prefix     = options[:prefix].gsub(/^\//, '')
@@ -46,18 +48,36 @@ module Rack
       end
 
       def gridfs_request(identifier)
-        file = find_file(identifier)
-        [200, {'Content-Type' => file.content_type}, file]
-      rescue Mongo::GridFileNotFound, BSON::InvalidObjectId
-        [404, {'Content-Type' => 'text/plain'}, ['File not found.']]
+        begin
+          file, code = gridfs_request_inner(identifier)
+          code == 200 ? [200, {'Content-Type' => file.content_type}, file] : [302, {'Content-Type' => file.content_type}, file]
+        rescue Mongo::GridFileNotFound, BSON::InvalidObjectId
+          [404, {'Content-Type' => 'text/plain'}, ['File not found.']]
+        end        
+      end
+      
+      def gridfs_request_inner(identifier)
+        begin
+          file = [find_file(identifier), 200]
+        rescue Mongo::GridFileNotFound, BSON::InvalidObjectId
+            # identifier =~ /\/avatar\// ? (@default_avatar_file ||= find_file(default_avatar_identifier(identifier), :path)) : raise
+            identifier =~ /\/avatar\//  ? [find_file(default_avatar_identifier(identifier), :path), 302] : raise
+        end
       end
 
-      def find_file(identifier)
-        case @lookup.to_sym
+      def find_file(identifier, lookup=nil)
+        case (lookup || @lookup).to_sym
         when :id   then Mongo::Grid.new(@db).get(BSON::ObjectId.from_string(identifier))
         when :path then Mongo::GridFileSystem.new(@db).open(identifier, "r")
         end
       end
+      
+      def default_avatar_identifier(identifier)
+        default_id = identifier.split('/')
+        default_id[-2] = 'default'
+        default_id.join('/')
+      end
+      
 
   end # GridFS class
 end # Rack module
