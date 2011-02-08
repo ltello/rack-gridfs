@@ -48,9 +48,11 @@ module Rack
       end
 
       def gridfs_request(identifier)
+        puts "RACK-GRIDFS: IMAGEN SOLICITADA: #{identifier}"
         begin
-          file, code = gridfs_request_inner(identifier)
-          code == 200 ? [200, {'Content-Type' => file.content_type}, file] : [302, {'Content-Type' => file.content_type}, file]
+          file, code, id = gridfs_request_inner(identifier)
+          puts "RACK-GRIDFS: IMAGEN SERVIDA: #{id}"
+          [code, {'Content-Type' => file.content_type}, file]
         rescue Mongo::GridFileNotFound, BSON::InvalidObjectId
           [404, {'Content-Type' => 'text/plain'}, ['File not found.']]
         end        
@@ -58,10 +60,9 @@ module Rack
       
       def gridfs_request_inner(identifier)
         begin
-          file = [find_file(identifier), 200]
+          file = [find_file(identifier), 200, identifier]
         rescue Mongo::GridFileNotFound, BSON::InvalidObjectId
-            # identifier =~ /\/avatar\// ? (@default_avatar_file ||= find_file(default_avatar_identifier(identifier), :path)) : raise
-            identifier =~ /\/avatar\//  ? [find_file(default_avatar_identifier(identifier), :path), 302] : raise
+            identifier =~ /image.jpg/  ? [find_file((id = default_imagejpg_identifier(identifier)), :path), 200, id] : raise
         end
       end
 
@@ -72,10 +73,12 @@ module Rack
         end
       end
       
-      def default_avatar_identifier(identifier)
-        default_id = identifier.split('/')
-        default_id[-2] = 'default'
-        default_id.join('/')
+      def default_imagejpg_identifier(identifier)
+        identifier.gsub!(/image\.jpg\-\d*\z/,'image.jpg')
+        return identifier if identifier.gsub!(/\/user\/[\w\d]+\//, '/user/default/')
+        return identifier if identifier.gsub!(/\/club\/[\w\d]+\/team\/[\w\d]+\//, '/team/default/')
+        return identifier if identifier.gsub!(/\/club\/[\w\d]+\//, '/club/default/')
+        raise Mongo::GridFileNotFound
       end
       
 
