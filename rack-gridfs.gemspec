@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+#require File.expand_path("../lib/rack/gridfs", __FILE__)
 
 Gem::Specification.new do |s|
   s.name        = "rack-gridfs"
@@ -29,4 +30,3 @@ Gem::Specification.new do |s|
      "README.rdoc"
   ]
 end
-require File.expand_path("../lib/rack/gridfs", __FILE__)
