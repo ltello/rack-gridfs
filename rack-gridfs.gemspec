@@ -1,9 +1,9 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path("../lib/rack/gridfs", __FILE__)
+#require File.expand_path("../lib/rack/gridfs", __FILE__)
 
 Gem::Specification.new do |s|
   s.name        = "rack-gridfs"
-  s.version     = Rack::GridFS::VERSION
+  s.version     = "0.2.0"
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Blake Carlson"]
   s.email       = ['blake@coin-operated.net']
